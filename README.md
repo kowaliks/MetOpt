@@ -1,0 +1,2 @@
+# MetOpt
+Metody optymalizacji - project
