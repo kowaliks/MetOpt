@@ -1,0 +1,116 @@
+Sys.setenv(ROI_LOAD_PLUGINS = "FALSE")
+library(ROI)
+library(ROI.plugin.glpk)
+library(ROI.plugin.qpoases)
+library(ROI.plugin.ecos)
+library(ROI.plugin.scs)
+library(ROI.plugin.alabama)
+library(ROI.plugin.lpsolve)
+str(OP)
+str(L_objective)
+lo <- L_objective(c(1, 2, 3), c("x", "y", "z"))
+lp  <- OP(objective = L_objective(c(7, 8), names=c("x", "y")),
+          constraints = L_constraint(L = rbind(c(3, 4), c(2, 1)), 
+                                     dir = c("==", ">="), rhs = c(9, 3)),
+          bounds = V_bound(li = 1:2, ui = 1:2, 
+                           lb = c(-100, -100), ub = c(100, 100)))
+ROI_applicable_solvers(lp)
+
+(sol <- ROI_solve(lp, solver = "glpk"))
+solution(sol)
+solution(sol, type = "msg")
+A <- rbind(c(6, 4, 5), c(8, 0, 2), c(9, 1, 7))
+milp <- OP(objective = L_objective(c(7, 1, 3), c("x", "y", "z")),
+           constraints = L_constraint(L = rbind(c(6, 4, 5), c(8, 0, 2), c(9, 1, 7)),
+                                      dir = c("<=", "<=", "<="),
+                                      rhs = c(60, 80, 70)),
+           types = c("I", "C", "I"), 
+           maximum = TRUE)
+ROI_applicable_solvers(milp)
+
+
+
+
+y <- longley[,1]
+x <- as.matrix(longley[,-1])
+
+library(slam)
+Sys.setenv(ROI_LOAD_PLUGINS = FALSE)
+library(ROI)
+library(ROI.plugin.qpoases)
+
+dbind <- function(...) {
+  .dbind <- function(x, y) {
+    A <- simple_triplet_zero_matrix(NROW(x), NCOL(y))
+    B <- simple_triplet_zero_matrix(NROW(y), NCOL(x))
+    rbind(cbind(x, A), cbind(B, y))
+  }
+  Reduce(.dbind, list(...))
+}
+
+qp_ridge <- function(x, y, lambda) {
+  stdm <- simple_triplet_diag_matrix
+  m <- NROW(x); n <- NCOL(x)
+  Q0 <- dbind(stdm(2 * lambda, n), stdm(1, m))
+  a0 <- c(b = double(n), g = double(m))
+  op <- OP(objective = Q_objective(Q = Q0, L = a0))
+  A1 <- cbind(x, stdm(1, m))
+  constraints(op) <- L_constraint(A1, eq(m), y)
+  bounds(op) <- V_bound(ld = -Inf, nobj = ncol(Q0))
+  op
+}
+
+op <- qp_ridge(x, y, 0)
+(qp0 <- ROI_solve(op, "qpoases"))
+
+cbind(round(coef(lm.fit(x, y)), 3), round(head(solution(qp0), ncol(x)), 3))
+
+op <- qp_ridge(x, y, 10)
+(qp1 <- ROI_solve(op, "qpoases"))
+
+
+head(solution(qp1), NCOL(x))
+cbind(round(coef(lm.fit(x, y)), 3), round(head(solution(qp1), ncol(x)), 3))
+
+
+library(slam)
+Sys.setenv(ROI_LOAD_PLUGINS = FALSE)
+library(ROI)
+library(ROI.plugin.qpoases)
+library(ROI.plugin.ecos)
+
+dbind <- function(...) {
+  .dbind <- function(x, y) {
+    A <- simple_triplet_zero_matrix(NROW(x), NCOL(y))
+    B <- simple_triplet_zero_matrix(NROW(y), NCOL(x))
+    rbind(cbind(x, A), cbind(B, y))
+  }
+  Reduce(.dbind, list(...))
+}
+
+qp_lasso <- function(x, y, lambda) {
+  stzm <- simple_triplet_zero_matrix
+  stdm <- simple_triplet_diag_matrix
+  m <- NROW(x); n <- NCOL(x)
+  Q0 <- dbind(stzm(n), stdm(1, m), stzm(n))
+  a0 <- c(b = double(n), g = double(m), t = lambda * rep(1, n))
+  op <- OP(objective = Q_objective(Q = Q0, L = a0))
+  ## y - X %*% beta = gamma  <=>  X %*% beta + gamma = y
+  A1 <- cbind(x, stdm(1, m), stzm(m, n))
+  LC1 <- L_constraint(A1, eq(m), y)
+  ##  -t <= beta  <=>  0 <= beta + t
+  A2 <- cbind(stdm(1, n), stzm(n, m), stdm(1, n))
+  LC2 <- L_constraint(A2, geq(n), double(n))
+  ##   beta <= t  <=>  beta - t <= 0
+  A3 <- cbind(stdm(1, n), stzm(n, m), stdm(-1, n))
+  LC3 <- L_constraint(A3, leq(n), double(n))
+  constraints(op) <- rbind(LC1, LC2, LC3)
+  bounds(op) <- V_bound(ld = -Inf, nobj = ncol(Q0))
+  op
+}
+
+op <- qp_lasso(x, y, 0)
+(qp0 <- ROI_solve(op, "qpoases"))
+
+cbind(round(coef(lm.fit(x, y)), 3), round(head(solution(qp0), ncol(x)), 3))
+
