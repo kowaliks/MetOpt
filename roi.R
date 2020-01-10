@@ -5,13 +5,13 @@ library(ROI.plugin.qpoases)
 library(ROI.plugin.ecos)
 library(ROI.plugin.scs)
 library(ROI.plugin.alabama)
-library(ROI.plugin.lpsolve)
 
 library(dplyr)
 library(slam)
+library(lars)
 
-y <- head(longley[,1], 5)
-x <- as.matrix(head(longley[,-1], 5))
+y <- longley[,1]
+x <- as.matrix(longley[,-1])
 
 # diagonal bind
 dbind <- function(...) {
@@ -52,13 +52,12 @@ qp_lasso <- function(x, y, lambda) {
   op
 }
 
-op <- qp_lasso(x, y, 0)
-(qp0 <- ROI_solve(op, "qpoases"))
-
-cbind(round(coef(lm.fit(x, y)), 3), round(head(solution(qp0), ncol(x)), 3))
+op <- qp_lasso(x, y, 2)
+# (qp0 <- ROI_solve(op, "qpoases"))
 
 
-xy_from_op <- function(op) {
+# ROI wrapper on lars
+xyl_from_op <- function(op) {
   constraints_matrix <- op$constraints$L
   count_cols_nonzero_values <- table(constraints_matrix$j)
   gamma_cols <- (as.data.frame(count_cols_nonzero_values) %>% filter(Freq == 1))$Var1 #cols with one value
@@ -72,5 +71,30 @@ xy_from_op <- function(op) {
   
   x <- as.matrix(constraints_matrix)[1:m, 1:n]
   y <- op$constraints$rhs[1:m]
+  
+  lambda <- op$objective$L[m+2*n]
+  
+  list(x, y, lambda)
 }
 
+
+
+lars_signature <- ROI_plugin_make_signature(objective = "Q", constraints = "L",
+                                            types = c("C"), bounds = c("X"), maximum = c(FALSE))
+
+ROI_plugin_add_status_code_to_db("lars", 0L, "OPT", "Solution is optimal", roi_code = 0L)
+
+lars_solve_op <- function(op, control) {
+  xyl <- xyl_from_op(op)
+  x <- xyl[[1]]
+  y <- xyl[[2]]
+  lambda <- xyl[[3]]
+  
+  out <- lars(x, y, normalize=FALSE, intercept=FALSE, type="lasso")
+  res <- ROI_plugin_canonicalize_solution(solution = coef(out, s=lambda, mode="lambda"),
+                                   optimum = -1, status = 0L, solver = "lars",
+                                   message = out)
+  res
+}
+
+ROI_plugin_register_solver_method(lars_signature, "lars", lars_solve_op)
