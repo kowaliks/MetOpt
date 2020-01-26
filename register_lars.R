@@ -25,8 +25,16 @@ xyl_from_op <- function(op) {
   #if(constraints_matrix[1][gamma_cols[1]] != 1) {
   #  stop("unsupported problem representation")
   #}
-  
-  x <- as.matrix(constraints_matrix)[1:m, 1:n]
+  x <-  matrix(0L,m,n)
+  triplet <- cbind(constraints_matrix$i, constraints_matrix$j, constraints_matrix$v)
+  for(index in 1:dim(triplet)[1])
+  {
+    i <- triplet[index,1]
+    j <- triplet[index,2]
+    if(i <= m & j <= n){
+      x[i,j] = triplet[index,3]
+    }
+  }
   y <- op$constraints$rhs[1:m]
   
   lambda <- op$objective$L[m+2*n]
@@ -53,4 +61,4 @@ lars_solve_op <- function(op, control) {
   res
 }
 
-ROI_plugin_register_solver_method(lars_signature, "lars", lars_solve_op)
+ROI_plugin_register_solver_method(lars_signature, "lars2", lars_solve_op)

@@ -54,14 +54,18 @@ data(diabetes)
 attach(diabetes)
 x <- diabetes$x2
 y <- diabetes$y
-# y <- longley[,1]
-# x <- as.matrix(longley[,-1])
+y <- longley[,1]
+x <- as.matrix(longley[,-1])
 
-op <- qp_lasso(x, y, 2)
-
+op <- qp_lasso(x, y, 0)
 
 start_time <- Sys.time()
-lars_solved <- ROI_solve(op, "lars_final_2")
+lars1_solved <- ROI_solve(op, "lars")
+stop_time <- Sys.time()
+lars1_duration <- stop_time - start_time
+
+start_time <- Sys.time()
+lars_solved <- ROI_solve(op, "lars2")
 stop_time <- Sys.time()
 lars_duration <- stop_time - start_time
 
