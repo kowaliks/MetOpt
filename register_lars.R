@@ -61,4 +61,4 @@ lars_solve_op <- function(op, control) {
   res
 }
 
-ROI_plugin_register_solver_method(lars_signature, "lars2", lars_solve_op)
+ROI_plugin_register_solver_method(lars_signature, "lars", lars_solve_op)
