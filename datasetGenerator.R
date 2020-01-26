@@ -1,24 +1,16 @@
-datasetSize = 1000000 
+sampleSize = 100000
+parameterSize = 1000
+relevantParameters = 5
 # input data
-x1 = rnorm(datasetSize,0,1)
-x2 = rnorm(datasetSize,2,3)
-x3 = rnorm(datasetSize,1,1)
-x4 = rnorm(datasetSize,0,2)
-x5 = rnorm(datasetSize,4,5)
-x6 = rnorm(datasetSize,0,1)
-x7 = rnorm(datasetSize,2,1)
-x8 = rnorm(datasetSize,0,4)
+set.seed(42)
+x <-data.frame(row.names=1:sampleSize)
+for (i in 1:parameterSize){
+  x[i] = rnorm(sampleSize,sample(1:5,1),sample(1:5,1))
+}
 
-expected_beta = c(0.5,5,-3,0,1,3,0,2,-2)
-y =  expected_beta[1] + 
-  expected_beta[2]*x1 +
-  expected_beta[3]*x2 +
-  expected_beta[4]*x3 +
-  expected_beta[5]*x4 +
-  expected_beta[6]*x5 +
-  expected_beta[7]*x6 +
-  expected_beta[8]*x7 +
-  expected_beta[9]*x8 +
-  rnorm(datasetSize,0,5) # random error
-
-x = cbind(x1,x2,x3,x4,x5,x6,x7,x8)
+expected_beta = c(1,2,3,4,5,6, integer(parameterSize - relevantParameters))
+set.seed(1337)
+y =  expected_beta[1] + rnorm(datasetSize,0,5) # random error
+for(i in 1:parameterSize)
+  y = y + expected_beta[i+1]*x[i]  
+  
