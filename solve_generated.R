@@ -13,4 +13,17 @@ set.seed(1337)
 y =  expected_beta[1] + rnorm(sampleSize,0,5) # random error
 for(i in 1:relevantParameters)
   y = y + expected_beta[i+1]*x[1:sampleSize,i]  
-  
+
+
+lambda <- 0
+op <- qp_lasso(x, y, lambda)
+
+start_time <- Sys.time()
+lars_solved <- ROI_solve(op, "lars")
+stop_time <- Sys.time()
+lars_duration <- stop_time - start_time
+
+start_time <- Sys.time()
+qpoases_solved <- ROI_solve(op, "qpoases")
+stop_time <- Sys.time()
+qpoases_duration <- stop_time - start_time

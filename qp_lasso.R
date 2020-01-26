@@ -48,24 +48,3 @@ qp_lasso <- function(x, y, lambda) {
   
   op
 }
-
-
-data(diabetes)
-attach(diabetes)
-x <- diabetes$x2
-y <- diabetes$y
-# y <- longley[,1]
-# x <- as.matrix(longley[,-1])
-
-
-op <- qp_lasso(x, y, 0)
-
-start_time <- Sys.time()
-lars_solved <- ROI_solve(op, "lars")
-stop_time <- Sys.time()
-lars_duration <- stop_time - start_time
-
-start_time <- Sys.time()
-qpoases_solved <- ROI_solve(op, "qpoases")
-stop_time <- Sys.time()
-qpoases_duration <- stop_time - start_time
