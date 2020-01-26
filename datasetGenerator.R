@@ -19,6 +19,6 @@ y =  expected_beta[1] +
   expected_beta[7]*x6 +
   expected_beta[8]*x7 +
   expected_beta[9]*x8 +
-  rnorm(datasetSize,0,1) # random error
+  rnorm(datasetSize,0,5) # random error
 
 x = cbind(x1,x2,x3,x4,x5,x6,x7,x8)
