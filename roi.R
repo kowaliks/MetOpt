@@ -57,12 +57,16 @@ y <- diabetes$y
 y <- longley[,1]
 x <- as.matrix(longley[,-1])
 
-op <- qp_lasso(x, y, 0)
 
+op <- qp_lasso(x, y, 0)
 start_time <- Sys.time()
 lars1_solved <- ROI_solve(op, "lars")
 stop_time <- Sys.time()
 lars1_duration <- stop_time - start_time
+
+
+
+op <- qp_lasso(x, y, 800)
 
 start_time <- Sys.time()
 lars_solved <- ROI_solve(op, "lars2")
